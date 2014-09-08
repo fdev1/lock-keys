@@ -3,12 +3,13 @@
 #include <gdk/gdkx.h>
 #include <glib.h>
 #include <Xlib.h>
+#include <XKBlib.h>
 #include <extensions/XKB.h>
 #include <pthread.h>
 
 GtkWidget* label;
 GtkWidget* window;
-const int count_down = 5;
+const int count_down = 15;
 
 static gboolean autohide_window(gpointer data)
 {
@@ -18,55 +19,61 @@ static gboolean autohide_window(gpointer data)
 	 * can figure out what the problem with XGrabKey is.
 	 */
 
-	static char visible = 1;
+	static char visible = 0;
 	static char caps_lock = -1;
 	static char count = 0;
 	char caps;
 	
-	if (visible)
-	{		
-		if (++count == count_down)
+	gchar* markup;
+	Display* display;
+	display = XOpenDisplay(NULL);
+
+	if (display)
+	{
+		unsigned n;
+		XkbGetIndicatorState(display, XkbUseCoreKbd, &n);
+		caps = n & 0x01;
+		XCloseDisplay(display);
+
+		if (caps_lock == -1)
 		{
-			gtk_widget_hide((GtkWidget*) data);
-			visible ^= 1;
+			caps_lock = caps;
+		}
+		else if (caps_lock != caps)
+		{
+			count = -1;
+			caps_lock = caps;
+
+			markup = g_markup_printf_escaped("<span size=\"100000\">%s</span>",
+					(caps ? "A" : "a"));
+			gtk_label_set_markup((GtkLabel*)label, markup);
+			g_free(markup);
+
+			if (!visible)
+				gtk_widget_show(GTK_WIDGET(window));
+
+			visible = 1;
+		}
+
+		if (visible)
+		{
+			if (++count == count_down)
+			{
+				gtk_widget_hide((GtkWidget*) data);
+				visible = 0;
+			}
 		}
 	}
 	else
 	{
-		char* txt = "";
-		gchar* markup;
-		Display* display;
-		display = XOpenDisplay(NULL);
-		
-		if (display) 
+		/*
+		 * TODO: log an error somewhere
+		 */
+		if (visible)
 		{
-			unsigned n;
-			XkbGetIndicatorState(display, XkbUseCoreKbd, &n);
-			if ((caps = n & 0x01))
-			{
-				txt = "A";
-			}
-			else
-			{
-				txt = "a";
-			}
-			XCloseDisplay(display);
-
-			if (caps_lock == -1)
-			{
-				caps_lock = caps;
-			}
-			else if (caps_lock != caps)
-			{
-				count = 0;
-				caps_lock = caps;
-				markup = g_markup_printf_escaped("<span size=\"100000\">%s</span>", txt);
-				gtk_label_set_markup((GtkLabel*)label, markup);
-				g_free(markup);
-				gtk_widget_show((GtkWidget*) data);
-			}
+			gtk_widget_hide(GTK_WIDGET(window));
+			visible = 0;
 		}
-		visible ^= 1;
 	}
 	
     return TRUE;
@@ -132,7 +139,7 @@ int main( int   argc, char *argv[] )
 		GrabModeAsync);
 	*/
 
-    g_timeout_add(200, autohide_window, window);
+    g_timeout_add(100, autohide_window, window);
 
     gtk_main();
 

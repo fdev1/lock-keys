@@ -1,8 +1,8 @@
 
 CC=gcc
 LD=gcc
-CFLAGS=-O2
-INSTALL_DIR=/usr/local/bin
+CFLAGS=-O2 -Wall
+DEST=/usr/local/bin
 EXECUTABLE=lock-keys
 SOURCES=main.c
 OBJECTS=$(SOURCES:.c=.o)
@@ -19,8 +19,9 @@ clean:
 	rm $(OBJECTS) $(EXECUTABLE)
 	
 install:
-	cp $(EXECUTABLE) $(INSTALL_DIR)
+	rm $(DEST)/$(EXECUTABLE)
+	cp $(EXECUTABLE) $(DEST)
 	
 uninstall:
-	rm $(INSTALL_DIR)/$(EXECUTABLE)
+	rm $(DEST)/$(EXECUTABLE)
 
