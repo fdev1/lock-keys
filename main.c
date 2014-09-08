@@ -12,6 +12,12 @@ const count_down = 5;
 
 static gboolean autohide_window(gpointer data)
 {
+
+	/*
+	 * We're using a polling workaround for now until we
+	 * can figure out what the problem with XGrabKey is.
+	 */
+
 	static char visible = 1;
 	static char caps_lock = -1;
 	static char count = 0;
