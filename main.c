@@ -8,7 +8,7 @@
 
 GtkWidget* label;
 GtkWidget* window;
-const count_down = 5;
+const int count_down = 5;
 
 static gboolean autohide_window(gpointer data)
 {
@@ -28,6 +28,7 @@ static gboolean autohide_window(gpointer data)
 		if (++count == count_down)
 		{
 			gtk_widget_hide((GtkWidget*) data);
+			visible ^= 1;
 		}
 	}
 	else
@@ -65,9 +66,8 @@ static gboolean autohide_window(gpointer data)
 				gtk_widget_show((GtkWidget*) data);
 			}
 		}
+		visible ^= 1;
 	}
-	
-	visible ^= 1;
 	
     return TRUE;
 }
