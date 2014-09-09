@@ -31,6 +31,10 @@
 #include "settings.h"
 #include "overlay.h"
 
+#if !defined(LK_EXEC_PATH)
+#define LK_EXEC_PATH	"/usr/local/bin/lock-keys"
+#endif
+
 
 static GtkWidget* settings_window = NULL;
 
@@ -43,6 +47,15 @@ LK_SETTINGS lk_settings = {
 	/* timeout */ 2,
 	/* autostart */ FALSE
 };
+
+void check_overlay_changed(GtkToggleButton *sender, GtkWidget** widgets)
+{
+	gboolean checked = gtk_toggle_button_get_active(sender);
+	gtk_widget_set_sensitive(*widgets++, checked);
+	gtk_widget_set_sensitive(*widgets++, checked);
+	gtk_widget_set_sensitive(*widgets++, checked);
+	gtk_widget_set_sensitive(*widgets++, checked);
+}
 
 static void opacity_changed(GtkSpinButton *spinbutton, GtkWidget* opacity)
 {
@@ -63,6 +76,21 @@ static void timeout_changed(GtkSpinButton *spinbutton, GtkWidget* timeout)
 void settings_dialog_show()
 {
 
+	int row = 0;
+	GtkWidget* content_area;
+	GtkWidget* grid;
+	GtkWidget* check_overlay;
+	GtkWidget* lbl_opacity;
+	GtkAdjustment* opacity_adjustment;
+	GtkWidget* opacity;
+	GtkWidget* lbl_timeout;
+	GtkAdjustment* timeout_adjustment;
+	GtkWidget* timeout;
+
+#if LK_USE_KDE || LK_USE_KDE4
+	GtkWidget* check_autostart;
+#endif
+
 	if (settings_window)
 	{
 		gtk_window_present(GTK_WINDOW(settings_window));
@@ -79,48 +107,56 @@ void settings_dialog_show()
 		GTK_RESPONSE_REJECT,
 		NULL);
 
-	GtkWidget* content_area = gtk_dialog_get_content_area(GTK_DIALOG(settings_window));
+	content_area = gtk_dialog_get_content_area(GTK_DIALOG(settings_window));
 	gtk_container_set_border_width(GTK_CONTAINER(content_area), 5);
 
-	GtkWidget* grid = gtk_grid_new();
+	grid = gtk_grid_new();
 	gtk_container_add(GTK_CONTAINER(content_area), grid);
 	gtk_widget_show(GTK_WIDGET(grid));
 
-	GtkWidget* check_autostart = gtk_check_button_new_with_label("Autostart at login.");
+#if LK_USE_KDE || LK_USE_KDE4
+	check_autostart = gtk_check_button_new_with_label("Autostart at login.");
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_autostart), lk_settings.autostart);
-	gtk_grid_attach(GTK_GRID(grid), check_autostart, 0, 0, 2, 1);
+	gtk_grid_attach(GTK_GRID(grid), check_autostart, 0, row++, 2, 1);
 	gtk_widget_show(GTK_WIDGET(check_autostart));
+#endif
 
-	GtkWidget* check_overlay = gtk_check_button_new_with_label("Show on-screen overlay");
+	check_overlay = gtk_check_button_new_with_label("Show on-screen overlay");
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_overlay), lk_settings.overlay);
-	gtk_grid_attach(GTK_GRID(grid), check_overlay, 0, 1, 2, 1);
+	gtk_grid_attach(GTK_GRID(grid), check_overlay, 0, row++, 2, 1);
 	gtk_widget_show(GTK_WIDGET(check_overlay));
 
-	GtkWidget* label = gtk_label_new("Opacity:");
-	gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(label), 0, 2, 1, 1);
-	gtk_widget_show(GTK_WIDGET(label));
-	GtkAdjustment* opacity_adjustment = gtk_adjustment_new(lk_settings.opacity, 0.10, 1.0, 0.01, 0.1, 0.0);
-	GtkWidget* opacity = gtk_spin_button_new(opacity_adjustment, 0.01, 2);
+	lbl_opacity = gtk_label_new("Opacity:");
+	gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(lbl_opacity), 0, row, 1, 1);
+	gtk_widget_show(GTK_WIDGET(lbl_opacity));
+	opacity_adjustment = gtk_adjustment_new(lk_settings.opacity, 0.10, 1.0, 0.01, 0.1, 0.0);
+	opacity = gtk_spin_button_new(opacity_adjustment, 0.01, 2);
 	gtk_spin_button_set_range(GTK_SPIN_BUTTON(opacity), 0.10, 1.0);
-	gtk_grid_attach(GTK_GRID(grid), opacity, 1, 2, 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), opacity, 1, row++, 1, 1);
 	gtk_widget_show(GTK_WIDGET(opacity));
 	g_signal_connect(opacity, "value-changed", G_CALLBACK(opacity_changed), opacity);
 
 
-	GtkWidget* lbl_timeout = gtk_label_new("Overlay Duration:");
-	gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(lbl_timeout), 0, 3, 1, 1);
+	lbl_timeout = gtk_label_new("Overlay Duration:");
+	gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(lbl_timeout), 0, row, 1, 1);
 	gtk_widget_show(GTK_WIDGET(lbl_timeout));
-	GtkAdjustment* timeout_adjustment = gtk_adjustment_new((gdouble)lk_settings.timeout, 1.0, 10.0, 1.0, 1.0, 0.0);
-	GtkWidget* timeout = gtk_spin_button_new(timeout_adjustment, 1.0, 0.0);
+	timeout_adjustment = gtk_adjustment_new((gdouble)lk_settings.timeout, 1.0, 10.0, 1.0, 1.0, 0.0);
+	timeout = gtk_spin_button_new(timeout_adjustment, 1.0, 0.0);
 	gtk_spin_button_set_range(GTK_SPIN_BUTTON(timeout), 1, 10);
-	gtk_grid_attach(GTK_GRID(grid), timeout, 1, 3, 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), timeout, 1, row++, 1, 1);
 	gtk_widget_show(GTK_WIDGET(timeout));
 	g_signal_connect(timeout, "value-changed", G_CALLBACK(timeout_changed), timeout);
 
+	{
+		GtkWidget* widgets[] = { lbl_opacity, opacity, lbl_timeout, timeout };
+		g_signal_connect(check_overlay, "toggled", G_CALLBACK(check_overlay_changed), widgets);
+	}
 
 	if (gtk_dialog_run(GTK_DIALOG(settings_window)) == GTK_RESPONSE_ACCEPT)
 	{
+#if LK_USE_KDE || LK_USE_KDE4
 		lk_settings.autostart = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_autostart));
+#endif
 		lk_settings.overlay = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_overlay));
 		lk_settings.opacity = gtk_spin_button_get_value(GTK_SPIN_BUTTON(opacity));
 		lk_settings.timeout = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(timeout));
@@ -134,13 +170,10 @@ void settings_dialog_show()
 
 static gboolean readline(FILE* f, char* buffer, uint bufflen)
 {
-	uint i;
-
-	for (i = 0; i < bufflen; i++)
+	char c;
+	while (bufflen--)
 	{
-		char c = fgetc(f);
-
-		if (c == EOF)
+		if ((c = fgetc(f)) == EOF)
 		{
 			*buffer++ = 0;
 			return TRUE;
@@ -152,17 +185,13 @@ static gboolean readline(FILE* f, char* buffer, uint bufflen)
 			break;
 		}
 		*buffer++ = c;
-
-
 	}
-
 	return FALSE;
 }
 
 static char* split(char* str, char c, uint len)
 {
 	char* s = str;
-//	len++;
 	while (len-- && *str != c && *str != 0)
 		str++;
 
@@ -171,9 +200,7 @@ static char* split(char* str, char c, uint len)
 		*str = 0;
 		return ++str;
 	}
-
 	return 0;
-
 }
 
 /*
@@ -201,11 +228,17 @@ void settings_save()
 		fclose(f);
 	}
 
+#if LK_USE_KDE || LK_USE_KDE4
+
+#if LK_USE_KDE4
 	sprintf(config_file, "%s/.kde4/Autostart/lock-keys", pw->pw_dir);
+#else
+	sprintf(config_file, "%s/.kde4/Autostart/lock-keys", pw->pw_dir);
+#endif
 
 	if (lk_settings.autostart)
 	{
-		if (symlink("/usr/local/bin/lock-keys", config_file))
+		if (symlink(LK_EXEC_PATH, config_file))
 			lk_settings.autostart = lk_settings.autostart;
 	}
 	else
@@ -213,6 +246,7 @@ void settings_save()
 		if (stat(config_file, &st) != -1)
 			remove(config_file);
 	}
+#endif
 
 }
 
@@ -221,11 +255,26 @@ void settings_save()
  */
 void settings_load()
 {
-	char line[30];
-	char home_dir[255];
-	char config_file[255];
-	struct stat st = {0};
+	#define MAX_LINE_LEN 30
+	#define MAX_PATH_LEN 255
+
+	char line[MAX_LINE_LEN];
+	char home_dir[MAX_PATH_LEN];
+	char config_file[MAX_PATH_LEN];
 	struct passwd *pw = getpwuid(getuid());
+
+	/*
+	 * since the max path length can be really long or
+	 * unbounded we just allocate a reasonable buffer and
+	 * if the home dir path exceeds it we throw an error. The
+	 * 27 if for the path of kde bellow.
+	 */
+	if (strlen(pw->pw_dir) > (MAX_PATH_LEN - 27))
+	{
+		printf("error: home directory path too long!");
+		printf("error: could not load settings!");
+		return;
+	}
 
 	sprintf(home_dir, "%s/.lock-keys", pw->pw_dir);
 	sprintf(config_file, "%s/lock-keys-rc", home_dir);
@@ -237,8 +286,8 @@ void settings_load()
 		while (!eof)
 		{
 			char* val;
-			eof = readline(f, line, 30);
-			val = split(line, '=', 30);
+			eof = readline(f, line, MAX_LINE_LEN);
+			val = split(line, '=', MAX_LINE_LEN);
 
 			if (val)
 			{
@@ -259,11 +308,24 @@ void settings_load()
 		fclose(f);
 	}
 
-	sprintf(config_file, "%s/.kde4/Autostart/lock-keys", pw->pw_dir);
-
-	if (stat(config_file, &st) != -1)
+#if LK_USE_KDE || LK_USE_KDE4
 	{
-		lk_settings.autostart = TRUE;
+		struct stat st = {0};
+
+#if LK_USE_KDE4
+		sprintf(config_file, "%s/.kde4/Autostart/lock-keys", pw->pw_dir);
+#else
+		sprintf(config_file, "%s/.kde/Autostart/lock-keys", pw->pw_dir);
+#endif
+
+		if (stat(config_file, &st) != -1)
+		{
+			lk_settings.autostart = TRUE;
+		}
 	}
+#endif
+
+	#undef MAX_LINE_LEN
+	#undef MAX_PATH_LEN
 
 }

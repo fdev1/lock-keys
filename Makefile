@@ -1,9 +1,11 @@
 
+ICONS_DIR=/usr/share/icons
+USE_KDE=0
+USE_KDE4=1
+
 CC=gcc
-LD=gcc
 CFLAGS=-O2 -Wall
 DEST=/usr/local/bin
-ICONS_DIR=/usr/share/icons
 EXECUTABLE=lock-keys
 SOURCES=main.c settings.c overlay.c
 OBJECTS=$(SOURCES:.c=.o)
@@ -11,12 +13,15 @@ OBJECTS=$(SOURCES:.c=.o)
 all: $(SOURCES) $(EXECUTABLE)
 
 $(EXECUTABLE):  $(OBJECTS)
-	$(LD) `pkg-config --libs gtk+-3.0` -o $@ $(OBJECTS)
+	$(CC) `pkg-config --libs gtk+-3.0` -o $@ $(OBJECTS)
 
 .c.o:
 	$(CC) $(CFLAGS)  `pkg-config --cflags gtk+-3.0` \
 		-DLK_TRAY_ICON_ON=\"$(ICONS_DIR)/lock-keys/tray_on.png\" \
-		-DLK_TRAY_ICON_OFF=\"$(ICONS_DIR)/lock-keys/tray_off.png\" -c $< -o $@
+		-DLK_TRAY_ICON_OFF=\"$(ICONS_DIR)/lock-keys/tray_off.png\" \
+		-DLK_BIN_PATH=\"$(DEST)/$(EXECUTABLE)\" \
+		-DLK_USE_KDE=$(USE_KDE) \
+		-DLK_USE_KDE4=$(USE_KDE4) -c $< -o $@
 	
 clean:
 	rm -f $(OBJECTS) $(EXECUTABLE)

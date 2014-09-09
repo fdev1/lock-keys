@@ -21,13 +21,6 @@
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 #include <glib.h>
-#if 0
-#include <gdk/gdkx.h>
-#include <Xlib.h>
-#include <XKBlib.h>
-#include <extensions/XKB.h>
-#include <pthread.h>
-#endif
 #include "settings.h"
 #include "overlay.h"
 
@@ -39,82 +32,63 @@
 	#define LK_TRAY_ICON_OFF		"tray_off.png"
 #endif
 
-GtkWidget* label;
-GtkWidget* window;
-GtkStatusIcon* tray_icon;
+static GtkStatusIcon* tray_icon;
+static gboolean caps_lock = FALSE;
 
-static gboolean autohide_window(gpointer data)
+/*
+ * polls for caps lock changes at a preset interval
+ */
+static gboolean poll_keys(gpointer data)
 {
+	gboolean caps =
+		gdk_keymap_get_caps_lock_state(gdk_keymap_get_default());
 
-	/*
-	 * We're using a polling workaround for now until we
-	 * can figure out what the problem with XGrabKey is.
-	 */
-
-	static char caps_lock = -1;
-	char caps;
-
-	caps = gdk_keymap_get_caps_lock_state(gdk_keymap_get_default());
-
-	if (caps_lock == -1)
+	if (caps_lock != caps)
 	{
 		caps_lock = caps;
-	}
-	else if (caps_lock != caps)
-	{
-		caps_lock = caps;
-		if (caps)
-		{
-			gtk_status_icon_set_from_file(tray_icon, LK_TRAY_ICON_ON);
-			overlay_caps_lock_set(caps);
-			overlay_show();
-		}
-		else
-		{
-			gtk_status_icon_set_from_file(tray_icon, LK_TRAY_ICON_OFF);
-			overlay_caps_lock_set(caps);
-			overlay_show();
-		}
+		gtk_status_icon_set_from_file(tray_icon, caps ? LK_TRAY_ICON_ON : LK_TRAY_ICON_OFF);
+		overlay_caps_lock_set(caps);
+		overlay_show();
 	}
 
 	return TRUE;
 }
 
-void tray_icon_activate(GtkStatusIcon *status_icon, gpointer user_data)
+/*
+ * configures the overlay window
+ */
+static inline void configure_overlay()
 {
-	settings_dialog_show();
 	overlay_state_set(lk_settings.overlay);
 	overlay_opacity_set(lk_settings.opacity);
 	overlay_timeout_set(lk_settings.timeout);
 }
 
-int main( int   argc, char *argv[] )
+/*
+ * handle tray icons activate signals (shows
+ * settings dialog and reconfigures overlay window
+ */
+static void tray_icon_activate(GtkStatusIcon *status_icon, gpointer user_data)
 {
+	settings_dialog_show();
+	configure_overlay();
+}
 
+int main(int argc, char *argv[])
+{
 	gtk_init (&argc, &argv);
 
 	settings_load();
-	overlay_state_set(lk_settings.overlay);
-	overlay_opacity_set(lk_settings.opacity);
-	overlay_timeout_set(lk_settings.timeout);
-
-	/*
-	 * create tray icon
-	 */
-	if (gdk_keymap_get_caps_lock_state(gdk_keymap_get_default()))
-	{
-		tray_icon = gtk_status_icon_new_from_file(LK_TRAY_ICON_ON);
-		overlay_caps_lock_set(TRUE);
-	}
-	else
-	{
-		tray_icon = gtk_status_icon_new_from_file(LK_TRAY_ICON_OFF);
-		overlay_caps_lock_set(FALSE);
-	}
+	configure_overlay();
+	caps_lock = gdk_keymap_get_caps_lock_state(gdk_keymap_get_default());
+	tray_icon = gtk_status_icon_new_from_file(caps_lock ? LK_TRAY_ICON_ON : LK_TRAY_ICON_OFF);
+	overlay_caps_lock_set(caps_lock);
 	g_signal_connect(tray_icon, "activate", G_CALLBACK(tray_icon_activate), NULL);
 
-
-    g_timeout_add(100, autohide_window, window);
+	/*
+	 * TODO: see if we can get this working without polling
+	 */
+    g_timeout_add(100, poll_keys, NULL);
 
     gtk_main();
 
