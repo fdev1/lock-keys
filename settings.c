@@ -1,34 +1,44 @@
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <pwd.h>
+#include <unistd.h>
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "settings.h"
 #include "overlay.h"
+
 
 static GtkWidget* settings_window = NULL;
 
 /*
- * settings struct
+ * in-memory settings structure
  */
 LK_SETTINGS lk_settings = {
 	/* opacity */ 0.8,
 	/* overlay */ TRUE,
 	/* timeout */ 2,
-	/* autostart */ TRUE
+	/* autostart */ FALSE
 };
 
-static void opacity_changed(
-	GtkSpinButton *spinbutton,
-	GtkWidget* opacity)
+static void opacity_changed(GtkSpinButton *spinbutton, GtkWidget* opacity)
 {
 	overlay_opacity_set(gtk_spin_button_get_value(GTK_SPIN_BUTTON(opacity)));
 	overlay_show();
 }
 
-static void timeout_changed(
-	GtkSpinButton *spinbutton,
-	GtkWidget* timeout)
+static void timeout_changed(GtkSpinButton *spinbutton, GtkWidget* timeout)
 {
 	overlay_timeout_set(gtk_spin_button_get_value(GTK_SPIN_BUTTON(timeout)));
 	overlay_show();
 }
 
+/*
+ * Display the settings dialog and update the config
+ * file and in-memory structure if necessary
+ */
 void settings_dialog_show()
 {
 
@@ -93,9 +103,124 @@ void settings_dialog_show()
 		lk_settings.overlay = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_overlay));
 		lk_settings.opacity = gtk_spin_button_get_value(GTK_SPIN_BUTTON(opacity));
 		lk_settings.timeout = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(timeout));
+		settings_save();
 	}
 
 	gtk_widget_destroy(GTK_WIDGET(settings_window));
 	settings_window = NULL;
 
+}
+
+/*
+ * Save settings to file.
+ */
+void settings_save()
+{
+	char home_dir[255];
+	char config_file[255];
+	struct stat st = {0};
+	struct passwd *pw = getpwuid(getuid());
+
+	sprintf(home_dir, "%s/.lock-keys", pw->pw_dir);
+	sprintf(config_file, "%s/lock-keys-rc", home_dir);
+
+	if (stat(home_dir, &st) == -1)
+		mkdir(home_dir, 0700);
+
+	FILE* f = fopen(config_file, "w");
+	if (f)
+	{
+		fprintf(f, "overlay=%i\n", lk_settings.overlay);
+		fprintf(f, "opacity=%.2f\n", lk_settings.opacity);
+		fprintf(f, "timeout=%i\n", lk_settings.timeout);
+		fclose(f);
+	}
+
+}
+
+static gboolean readline(FILE* f, char* buffer, uint bufflen)
+{
+	uint i;
+
+	for (i = 0; i < bufflen; i++)
+	{
+		char c = fgetc(f);
+
+		if (c == EOF)
+		{
+			*buffer++ = 0;
+			return TRUE;
+		}
+
+		if (c == 0 || c == '\n')
+		{
+			*buffer++ = 0;
+			break;
+		}
+		*buffer++ = c;
+
+
+	}
+
+	return FALSE;
+}
+
+static char* split(char* str, char c, uint len)
+{
+	char* s = str;
+//	len++;
+	while (len-- && *str != c && *str != 0)
+		str++;
+
+	if (*str == c && str != s && len != 0)
+	{
+		*str = 0;
+		return ++str;
+	}
+
+	return 0;
+
+}
+
+/*
+ * Parse the config file and load settings.
+ */
+void settings_load()
+{
+	char line[30];
+	char home_dir[255];
+	char config_file[255];
+	struct passwd *pw = getpwuid(getuid());
+
+	sprintf(home_dir, "%s/.lock-keys", pw->pw_dir);
+	sprintf(config_file, "%s/lock-keys-rc", home_dir);
+
+	FILE* f = fopen(config_file, "r");
+	if (f)
+	{
+		gboolean eof = FALSE;
+		while (!eof)
+		{
+			char* val;
+			eof = readline(f, line, 30);
+			val = split(line, '=', 30);
+
+			if (val)
+			{
+				if (!strcmp(line, "opacity"))
+				{
+					lk_settings.opacity = atof(val);
+				}
+				else if (!strcmp(line, "overlay"))
+				{
+					lk_settings.overlay = atoi(val);
+				}
+				else if (!strcmp(line, "timeout"))
+				{
+					lk_settings.timeout = atoi(val);
+				}
+			}
+		}
+		fclose(f);
+	}
 }

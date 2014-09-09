@@ -73,6 +73,7 @@ int main( int   argc, char *argv[] )
 
 	gtk_init (&argc, &argv);
 
+	settings_load();
 	overlay_state_set(lk_settings.overlay);
 	overlay_opacity_set(lk_settings.opacity);
 	overlay_timeout_set(lk_settings.timeout);
