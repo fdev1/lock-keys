@@ -11,4 +11,7 @@ typedef struct
 LK_SETTINGS;
 
 extern LK_SETTINGS lk_settings;
+
+void settings_load();
+void settings_save();
 void settings_dialog_show();
