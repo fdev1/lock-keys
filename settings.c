@@ -1,3 +1,24 @@
+/*
+ * lock-keys - Caps lock indicator fo linux laptops
+ * Copyright (C) 2014 Fernando Rodriguez (frodriguez.developer@outlook.com)
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ */
+
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <pwd.h>
@@ -111,33 +132,6 @@ void settings_dialog_show()
 
 }
 
-/*
- * Save settings to file.
- */
-void settings_save()
-{
-	char home_dir[255];
-	char config_file[255];
-	struct stat st = {0};
-	struct passwd *pw = getpwuid(getuid());
-
-	sprintf(home_dir, "%s/.lock-keys", pw->pw_dir);
-	sprintf(config_file, "%s/lock-keys-rc", home_dir);
-
-	if (stat(home_dir, &st) == -1)
-		mkdir(home_dir, 0700);
-
-	FILE* f = fopen(config_file, "w");
-	if (f)
-	{
-		fprintf(f, "overlay=%i\n", lk_settings.overlay);
-		fprintf(f, "opacity=%.2f\n", lk_settings.opacity);
-		fprintf(f, "timeout=%i\n", lk_settings.timeout);
-		fclose(f);
-	}
-
-}
-
 static gboolean readline(FILE* f, char* buffer, uint bufflen)
 {
 	uint i;
@@ -183,6 +177,46 @@ static char* split(char* str, char c, uint len)
 }
 
 /*
+ * Save settings to file.
+ */
+void settings_save()
+{
+	char home_dir[255];
+	char config_file[255];
+	struct stat st = {0};
+	struct passwd *pw = getpwuid(getuid());
+
+	sprintf(home_dir, "%s/.lock-keys", pw->pw_dir);
+	sprintf(config_file, "%s/lock-keys-rc", home_dir);
+
+	if (stat(home_dir, &st) == -1)
+		mkdir(home_dir, 0700);
+
+	FILE* f = fopen(config_file, "w");
+	if (f)
+	{
+		fprintf(f, "overlay=%i\n", lk_settings.overlay);
+		fprintf(f, "opacity=%.2f\n", lk_settings.opacity);
+		fprintf(f, "timeout=%i\n", lk_settings.timeout);
+		fclose(f);
+	}
+
+	sprintf(config_file, "%s/.kde4/Autostart/lock-keys", pw->pw_dir);
+
+	if (lk_settings.autostart)
+	{
+		if (symlink("/usr/local/bin/lock-keys", config_file))
+			lk_settings.autostart = lk_settings.autostart;
+	}
+	else
+	{
+		if (stat(config_file, &st) != -1)
+			remove(config_file);
+	}
+
+}
+
+/*
  * Parse the config file and load settings.
  */
 void settings_load()
@@ -190,6 +224,7 @@ void settings_load()
 	char line[30];
 	char home_dir[255];
 	char config_file[255];
+	struct stat st = {0};
 	struct passwd *pw = getpwuid(getuid());
 
 	sprintf(home_dir, "%s/.lock-keys", pw->pw_dir);
@@ -223,4 +258,12 @@ void settings_load()
 		}
 		fclose(f);
 	}
+
+	sprintf(config_file, "%s/.kde4/Autostart/lock-keys", pw->pw_dir);
+
+	if (stat(config_file, &st) != -1)
+	{
+		lk_settings.autostart = TRUE;
+	}
+
 }
