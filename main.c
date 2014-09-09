@@ -1,14 +1,26 @@
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
-#include <gdk/gdkx.h>
 #include <glib.h>
+#if 0
+#include <gdk/gdkx.h>
 #include <Xlib.h>
 #include <XKBlib.h>
 #include <extensions/XKB.h>
 #include <pthread.h>
+#endif
+#include "settings.h"
+
+#if !defined(LK_TRAY_ICON_ON)
+	#define LK_TRAY_ICON_ON			"tray_on.png"
+#endif
+
+#if !defined(LK_TRAY_ICON_OFF)
+	#define LK_TRAY_ICON_OFF		"tray_off.png"
+#endif
 
 GtkWidget* label;
 GtkWidget* window;
+GtkStatusIcon* tray_icon;
 const int count_down = 15;
 
 static gboolean autohide_window(gpointer data)
@@ -25,6 +37,8 @@ static gboolean autohide_window(gpointer data)
 	char caps;
 	
 	gchar* markup;
+
+#if 0
 	Display* display;
 	display = XOpenDisplay(NULL);
 
@@ -34,6 +48,9 @@ static gboolean autohide_window(gpointer data)
 		XkbGetIndicatorState(display, XkbUseCoreKbd, &n);
 		caps = n & 0x01;
 		XCloseDisplay(display);
+#else
+		caps = gdk_keymap_get_caps_lock_state(gdk_keymap_get_default());
+#endif
 
 		if (caps_lock == -1)
 		{
@@ -43,9 +60,16 @@ static gboolean autohide_window(gpointer data)
 		{
 			count = -1;
 			caps_lock = caps;
-
-			markup = g_markup_printf_escaped("<span size=\"100000\">%s</span>",
-					(caps ? "A" : "a"));
+			if (caps)
+			{
+				gtk_status_icon_set_from_file(tray_icon, LK_TRAY_ICON_ON);
+				markup = g_markup_printf_escaped("<span size=\"100000\">A</span>");
+			}
+			else
+			{
+				gtk_status_icon_set_from_file(tray_icon, LK_TRAY_ICON_OFF);
+				markup = g_markup_printf_escaped("<span size=\"100000\">a</span>");
+			}
 			gtk_label_set_markup((GtkLabel*)label, markup);
 			g_free(markup);
 
@@ -63,6 +87,7 @@ static gboolean autohide_window(gpointer data)
 				visible = 0;
 			}
 		}
+#if 0
 	}
 	else
 	{
@@ -75,7 +100,7 @@ static gboolean autohide_window(gpointer data)
 			visible = 0;
 		}
 	}
-	
+#endif
     return TRUE;
 }
 
@@ -96,7 +121,7 @@ static void create_window()
     gtk_window_set_keep_above((GtkWindow*)window, TRUE);
     gtk_window_resize((GtkWindow*)window, width, height);
     gtk_window_move((GtkWindow*)window, (screen_width / 2) - (width / 2), (screen_height) - (height) - 100);
-    gtk_widget_set_opacity((GtkWidget*)window, 0.5);
+    gtk_widget_set_opacity((GtkWidget*)window, lk_settings.opacity);
     gtk_container_set_border_width (GTK_CONTAINER (window), 10);
  
     label = gtk_label_new("A");
@@ -106,7 +131,7 @@ static void create_window()
 
 }
 
-/*
+#if 0
 static GdkFilterReturn root_window_filter(GdkXEvent* xevent, GdkEvent* event, gpointer data)
 {
 	
@@ -114,7 +139,13 @@ static GdkFilterReturn root_window_filter(GdkXEvent* xevent, GdkEvent* event, gp
 	
 	return GDK_FILTER_CONTINUE;
 }
-*/
+#endif
+
+void tray_icon_activate(GtkStatusIcon *status_icon, gpointer user_data)
+{
+	settings_dialog_show();
+    gtk_widget_set_opacity(GTK_WIDGET(window), lk_settings.opacity);
+}
 
 int main( int   argc, char *argv[] )
 {
@@ -124,6 +155,16 @@ int main( int   argc, char *argv[] )
 	create_window();
 
 	/*
+	 * create tray icon
+	 */
+	if (gdk_keymap_get_caps_lock_state(gdk_keymap_get_default()))
+		tray_icon = gtk_status_icon_new_from_file(LK_TRAY_ICON_ON);
+	else
+		tray_icon = gtk_status_icon_new_from_file(LK_TRAY_ICON_OFF);
+	g_signal_connect(tray_icon, "activate", G_CALLBACK(tray_icon_activate), NULL);
+
+
+#if 0
 	gdk_window_add_filter(
 		gdk_get_default_root_window(),
 		root_window_filter,
@@ -137,7 +178,7 @@ int main( int   argc, char *argv[] )
 		FALSE,
 		GrabModeAsync,
 		GrabModeAsync);
-	*/
+#endif
 
     g_timeout_add(100, autohide_window, window);
 
