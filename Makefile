@@ -7,7 +7,7 @@ CC=gcc
 CFLAGS=-O2 -Wall
 DEST=/usr/local/bin
 EXECUTABLE=lock-keys
-SOURCES=main.c settings.c overlay.c
+SOURCES=main.c settings.c overlay.c about.c
 OBJECTS=$(SOURCES:.c=.o)
 
 all: $(SOURCES) $(EXECUTABLE)

@@ -23,14 +23,8 @@
 #include <glib.h>
 #include "settings.h"
 #include "overlay.h"
-
-#if !defined(LK_TRAY_ICON_ON)
-	#define LK_TRAY_ICON_ON			"tray_on.png"
-#endif
-
-#if !defined(LK_TRAY_ICON_OFF)
-	#define LK_TRAY_ICON_OFF		"tray_off.png"
-#endif
+#include "about.h"
+#include "icons.h"
 
 static GtkStatusIcon* tray_icon;
 static gboolean caps_lock = FALSE;
@@ -74,16 +68,67 @@ static void tray_icon_activate(GtkStatusIcon *status_icon, gpointer user_data)
 	configure_overlay();
 }
 
+static void tray_icon_popup(GtkStatusIcon *status_icon, guint button, guint activate_time, gpointer gp)
+{
+	gtk_menu_popup(GTK_MENU(gp), NULL, NULL, NULL, NULL, button, activate_time);
+}
+
+static void tray_icon_settings(GtkWidget* item, gpointer gp)
+{
+	settings_dialog_show();
+	configure_overlay();
+}
+
+static void tray_icon_about(GtkWidget* item, gpointer gp)
+{
+	about_show();
+}
+
+static void tray_icon_exit(GtkWidget* item, gpointer gp)
+{
+	gtk_main_quit();
+}
+
+static void create_tray_icon()
+{
+	GtkWidget* menu;
+	GtkWidget* menu_item;
+
+	tray_icon = gtk_status_icon_new_from_file(
+			caps_lock ? LK_TRAY_ICON_ON : LK_TRAY_ICON_OFF);
+
+	menu = gtk_menu_new();
+
+	menu_item = gtk_menu_item_new_with_label("Lock-keys Settings");
+	gtk_menu_shell_append(GTK_MENU_SHELL(menu), menu_item);
+	gtk_widget_show(GTK_WIDGET(menu_item));
+	g_signal_connect(menu_item, "activate", G_CALLBACK(tray_icon_settings), NULL);
+
+	menu_item = gtk_menu_item_new_with_label("About Lock-keys...");
+	gtk_menu_shell_append(GTK_MENU_SHELL(menu), menu_item);
+	gtk_widget_show(GTK_WIDGET(menu_item));
+	g_signal_connect(menu_item, "activate", G_CALLBACK(tray_icon_about), NULL);
+
+	menu_item = gtk_menu_item_new_with_label("Quit");
+	gtk_menu_shell_append(GTK_MENU_SHELL(menu), menu_item);
+	gtk_widget_show(GTK_WIDGET(menu_item));
+	gtk_widget_show(GTK_WIDGET(menu));
+	g_signal_connect(menu_item, "activate", G_CALLBACK(tray_icon_exit), NULL);
+
+	g_signal_connect(tray_icon, "activate", G_CALLBACK(tray_icon_activate), NULL);
+	g_signal_connect(tray_icon, "popup-menu", G_CALLBACK(tray_icon_popup), menu);
+}
+
 int main(int argc, char *argv[])
 {
 	gtk_init (&argc, &argv);
+	gtk_window_set_default_icon_from_file(LK_TRAY_ICON_ON, NULL);
+	caps_lock = gdk_keymap_get_caps_lock_state(gdk_keymap_get_default());
 
 	settings_load();
+	create_tray_icon();
 	configure_overlay();
-	caps_lock = gdk_keymap_get_caps_lock_state(gdk_keymap_get_default());
-	tray_icon = gtk_status_icon_new_from_file(caps_lock ? LK_TRAY_ICON_ON : LK_TRAY_ICON_OFF);
 	overlay_caps_lock_set(caps_lock);
-	g_signal_connect(tray_icon, "activate", G_CALLBACK(tray_icon_activate), NULL);
 
 	/*
 	 * TODO: see if we can get this working without polling

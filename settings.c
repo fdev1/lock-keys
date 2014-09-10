@@ -108,9 +108,10 @@ void settings_dialog_show()
 		NULL);
 
 	content_area = gtk_dialog_get_content_area(GTK_DIALOG(settings_window));
-	gtk_container_set_border_width(GTK_CONTAINER(content_area), 5);
+	gtk_container_set_border_width(GTK_CONTAINER(content_area), 15);
 
 	grid = gtk_grid_new();
+	gtk_grid_set_column_spacing(GTK_GRID(grid), 5);
 	gtk_container_add(GTK_CONTAINER(content_area), grid);
 	gtk_widget_show(GTK_WIDGET(grid));
 
@@ -126,7 +127,13 @@ void settings_dialog_show()
 	gtk_grid_attach(GTK_GRID(grid), check_overlay, 0, row++, 2, 1);
 	gtk_widget_show(GTK_WIDGET(check_overlay));
 
+	lbl_opacity = gtk_label_new("");
+	gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(lbl_opacity), 0, row++, 1, 1);
+	gtk_widget_show(GTK_WIDGET(lbl_opacity));
+
+
 	lbl_opacity = gtk_label_new("Opacity:");
+	gtk_misc_set_alignment(GTK_MISC(lbl_opacity), 0, 0.5);
 	gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(lbl_opacity), 0, row, 1, 1);
 	gtk_widget_show(GTK_WIDGET(lbl_opacity));
 	opacity_adjustment = gtk_adjustment_new(lk_settings.opacity, 0.10, 1.0, 0.01, 0.1, 0.0);
@@ -138,6 +145,8 @@ void settings_dialog_show()
 
 
 	lbl_timeout = gtk_label_new("Overlay Duration:");
+	gtk_misc_set_alignment(GTK_MISC(lbl_timeout), 0, 0.5);
+	gtk_misc_set_alignment(GTK_MISC(lbl_timeout), 0, 0.5);
 	gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(lbl_timeout), 0, row, 1, 1);
 	gtk_widget_show(GTK_WIDGET(lbl_timeout));
 	timeout_adjustment = gtk_adjustment_new((gdouble)lk_settings.timeout, 1.0, 10.0, 1.0, 1.0, 0.0);
@@ -217,7 +226,7 @@ void settings_save()
 	sprintf(config_file, "%s/lock-keys-rc", home_dir);
 
 	if (stat(home_dir, &st) == -1)
-		mkdir(home_dir, 0700);
+		mkdir(home_dir, 0600);
 
 	FILE* f = fopen(config_file, "w");
 	if (f)
