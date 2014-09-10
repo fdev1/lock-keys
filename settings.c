@@ -226,7 +226,7 @@ void settings_save()
 	sprintf(config_file, "%s/lock-keys-rc", home_dir);
 
 	if (stat(home_dir, &st) == -1)
-		mkdir(home_dir, 0600);
+		mkdir(home_dir, 0700);
 
 	FILE* f = fopen(config_file, "w");
 	if (f)
