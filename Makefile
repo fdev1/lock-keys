@@ -1,8 +1,8 @@
 
-ICONS_DIR=/usr/share/icons
 USE_KDE=0
 USE_KDE4=1
 PREFIX=/usr/local
+ICONS_DIR=$(PREFIX)/share/icons
 
 CC=gcc
 CFLAGS=-O2 -Wall
