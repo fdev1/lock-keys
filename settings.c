@@ -55,11 +55,18 @@ void check_overlay_changed(GtkToggleButton *sender, GtkWidget** widgets)
 	gtk_widget_set_sensitive(*widgets++, checked);
 	gtk_widget_set_sensitive(*widgets++, checked);
 	gtk_widget_set_sensitive(*widgets++, checked);
+	overlay_show();
 }
 
 static void opacity_changed(GtkSpinButton *spinbutton, GtkWidget* opacity)
 {
+	/*
 	overlay_opacity_set(gtk_spin_button_get_value(GTK_SPIN_BUTTON(opacity)));
+	overlay_show();
+	*/
+	gdouble opacity_value;
+	opacity_value = gtk_spin_button_get_value(GTK_SPIN_BUTTON(opacity));
+	overlay_opacity_set(opacity_value);
 	overlay_show();
 }
 
@@ -133,7 +140,13 @@ void settings_dialog_show()
 
 
 	lbl_opacity = gtk_label_new("Opacity:");
-	gtk_misc_set_alignment(GTK_MISC(lbl_opacity), 0, 0.5);
+	/* gtk_misc_set_alignment(GTK_MISC(lbl_opacity), 0, 0.5); */
+	/* these where added on 3.16
+	gtk_label_set_xalign(GTK_LABEL(lbl_opacity), 0);
+	gtk_label_set_yalign(GTK_LABEL(lbl_opacity), 0.5);
+	*/
+	gtk_widget_set_halign(GTK_WIDGET(lbl_opacity), 0);
+	gtk_widget_set_valign(GTK_WIDGET(lbl_opacity), 0.5);
 	gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(lbl_opacity), 0, row, 1, 1);
 	gtk_widget_show(GTK_WIDGET(lbl_opacity));
 	opacity_adjustment = gtk_adjustment_new(lk_settings.opacity, 0.10, 1.0, 0.01, 0.1, 0.0);
@@ -145,8 +158,13 @@ void settings_dialog_show()
 
 
 	lbl_timeout = gtk_label_new("Overlay Duration:");
-	gtk_misc_set_alignment(GTK_MISC(lbl_timeout), 0, 0.5);
-	gtk_misc_set_alignment(GTK_MISC(lbl_timeout), 0, 0.5);
+	/* gtk_misc_set_alignment(GTK_MISC(lbl_timeout), 0, 0.5); */
+	/* these where added on 3.16
+	gtk_label_set_xalign(GTK_LABEL(lbl_timeout), 0);
+	gtk_label_set_yalign(GTK_LABEL(lbl_timeout), 0.5);
+	*/
+	gtk_widget_set_halign(GTK_WIDGET(lbl_timeout), 0);
+	gtk_widget_set_valign(GTK_WIDGET(lbl_timeout), 0.5);
 	gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(lbl_timeout), 0, row, 1, 1);
 	gtk_widget_show(GTK_WIDGET(lbl_timeout));
 	timeout_adjustment = gtk_adjustment_new((gdouble)lk_settings.timeout, 1.0, 10.0, 1.0, 1.0, 0.0);
@@ -302,7 +320,8 @@ void settings_load()
 			{
 				if (!strcmp(line, "opacity"))
 				{
-					lk_settings.opacity = atof(val);
+					/*lk_settings.opacity = atof(val);*/
+					lk_settings.opacity = g_strtod(val, NULL);
 				}
 				else if (!strcmp(line, "overlay"))
 				{

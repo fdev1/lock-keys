@@ -1,0 +1,8 @@
+*.o
+*.cproj
+.cproject
+.directory
+.project
+.settings/*
+Default/*
+lock-keys

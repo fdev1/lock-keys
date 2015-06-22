@@ -40,7 +40,8 @@ static gboolean poll_keys(gpointer data)
 	if (caps_lock != caps)
 	{
 		caps_lock = caps;
-		gtk_status_icon_set_from_file(tray_icon, caps ? LK_TRAY_ICON_ON : LK_TRAY_ICON_OFF);
+		gtk_status_icon_set_from_file(tray_icon, caps ? 
+			LK_TRAY_ICON_ON : LK_TRAY_ICON_OFF);
 		overlay_caps_lock_set(caps);
 		overlay_show();
 	}
@@ -53,9 +54,13 @@ static gboolean poll_keys(gpointer data)
  */
 static inline void configure_overlay()
 {
+	gdouble overlay_opacity;
+	overlay_opacity = 0.5; /*lk_settings.opacity;*/
+
 	overlay_state_set(lk_settings.overlay);
-	overlay_opacity_set(lk_settings.opacity);
+	overlay_opacity_set(overlay_opacity);
 	overlay_timeout_set(lk_settings.timeout);
+	overlay_show();
 }
 
 /*
@@ -133,9 +138,9 @@ int main(int argc, char *argv[])
 	/*
 	 * TODO: see if we can get this working without polling
 	 */
-    g_timeout_add(100, poll_keys, NULL);
+	g_timeout_add(100, poll_keys, NULL);
 
-    gtk_main();
+	gtk_main();
 
-    return 0;
+	return 0;
 }
