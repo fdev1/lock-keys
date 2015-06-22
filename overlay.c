@@ -37,7 +37,7 @@ static gboolean autohide_window(gpointer data)
 
 static void create_window()
 {
-	g_debug("Creating overlay window.");
+	g_debug("Creating overlay window");
 	gint width, height;
 	gint screen_width, screen_height;
 	GdkScreen* screen;
@@ -53,11 +53,12 @@ static void create_window()
 	gtk_window_set_keep_above(GTK_WINDOW(overlay_window), TRUE);
 	gtk_window_resize(GTK_WINDOW(overlay_window), width, height);
 	gtk_window_move(GTK_WINDOW(overlay_window), 
-	(screen_width / 2) - (width / 2), (screen_height) - (height) - 100);
+		(screen_width / 2) - (width / 2), (screen_height) - (height) - 100);
 	gtk_container_set_border_width (GTK_CONTAINER(overlay_window), 10);
 
 	overlay_label = gtk_label_new("A");
 	gtk_container_add(GTK_CONTAINER(overlay_window), overlay_label);
+
 	gtk_widget_show(overlay_label);
 
 }
@@ -109,8 +110,8 @@ void overlay_show()
 		return;
 
 	g_debug("opacity: %f", overlay_opacity);
-	gtk_widget_set_opacity(GTK_WIDGET(overlay_window), overlay_opacity);
 	gtk_widget_show(GTK_WIDGET(overlay_window));
+	gtk_widget_set_opacity(GTK_WIDGET(overlay_window), overlay_opacity);
 
 	if (timer_id)
 		g_source_remove(timer_id);
@@ -125,8 +126,6 @@ void overlay_opacity_set(gdouble opacity)
 {
 	g_debug("Setting overlay opacity");
 	overlay_opacity = opacity;
-	if (overlay_window != NULL)
-		gtk_widget_set_opacity(GTK_WIDGET(overlay_window), opacity);
 }
 
 void overlay_timeout_set(guint seconds)

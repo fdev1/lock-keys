@@ -54,13 +54,9 @@ static gboolean poll_keys(gpointer data)
  */
 static inline void configure_overlay()
 {
-	gdouble overlay_opacity;
-	overlay_opacity = 0.5; /*lk_settings.opacity;*/
-
 	overlay_state_set(lk_settings.overlay);
-	overlay_opacity_set(overlay_opacity);
+	overlay_opacity_set(lk_settings.opacity);
 	overlay_timeout_set(lk_settings.timeout);
-	overlay_show();
 }
 
 /*

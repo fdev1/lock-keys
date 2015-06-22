@@ -55,6 +55,8 @@ void check_overlay_changed(GtkToggleButton *sender, GtkWidget** widgets)
 	gtk_widget_set_sensitive(*widgets++, checked);
 	gtk_widget_set_sensitive(*widgets++, checked);
 	gtk_widget_set_sensitive(*widgets++, checked);
+
+	overlay_opacity_set(lk_settings.opacity);
 	overlay_show();
 }
 
