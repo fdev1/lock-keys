@@ -19,7 +19,7 @@ $(EXECUTABLE):  $(OBJECTS)
 	$(CC) $(CFLAGS)  `pkg-config --cflags gtk+-3.0` \
 		-DLK_TRAY_ICON_ON=\"$(ICONS_DIR)/lock-keys/tray_on.png\" \
 		-DLK_TRAY_ICON_OFF=\"$(ICONS_DIR)/lock-keys/tray_off.png\" \
-		-DLK_BIN_PATH=\"$(DEST)/bin/$(EXECUTABLE)\" \
+		-DLK_BIN_PATH=\"$(PREFIX)/bin/$(EXECUTABLE)\" \
 		-DLK_USE_KDE=$(USE_KDE) \
 		-DLK_USE_KDE4=$(USE_KDE4) -c $< -o $@
 	
@@ -30,10 +30,10 @@ install:
 	mkdir -p $(ICONS_DIR)/lock-keys
 	cp tray_on.png $(ICONS_DIR)/lock-keys/tray_on.png
 	cp tray_off.png $(ICONS_DIR)/lock-keys/tray_off.png
-	rm -f $(DEST)/bin/$(EXECUTABLE)
-	cp $(EXECUTABLE) $(DEST)/bin
+	rm -f $(PREFIX)/bin/$(EXECUTABLE)
+	cp $(EXECUTABLE) $(PREFIX)/bin
 	
 uninstall:
 	rm -rf $(ICONS_DIR)/lock-keys
-	rm -f $(DEST)/bin/$(EXECUTABLE)
+	rm -f $(PREFIX)/bin/$(EXECUTABLE)
 
