@@ -28,6 +28,7 @@ clean:
 	rm -f $(OBJECTS) $(EXECUTABLE)
 	
 install:
+	mkdir -p $(DESTDIR)/$(PREFIX)/bin
 	mkdir -p $(DESTDIR)/$(ICONS_DIR)/lock-keys
 	cp tray_on.png $(DESTDIR)/$(ICONS_DIR)/lock-keys/tray_on.png
 	cp tray_off.png $(DESTDIR)/$(ICONS_DIR)/lock-keys/tray_off.png
