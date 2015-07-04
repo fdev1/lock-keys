@@ -1,6 +1,7 @@
 
 USE_KDE=0
 USE_KDE4=1
+DESTDIR=/
 PREFIX=/usr/local
 ICONS_DIR=$(PREFIX)/share/icons
 
@@ -27,13 +28,13 @@ clean:
 	rm -f $(OBJECTS) $(EXECUTABLE)
 	
 install:
-	mkdir -p $(ICONS_DIR)/lock-keys
-	cp tray_on.png $(ICONS_DIR)/lock-keys/tray_on.png
-	cp tray_off.png $(ICONS_DIR)/lock-keys/tray_off.png
-	rm -f $(PREFIX)/bin/$(EXECUTABLE)
-	cp $(EXECUTABLE) $(PREFIX)/bin
+	mkdir -p $(DESTDIR)/$(ICONS_DIR)/lock-keys
+	cp tray_on.png $(DESTDIR)/$(ICONS_DIR)/lock-keys/tray_on.png
+	cp tray_off.png $(DESTDIR)/$(ICONS_DIR)/lock-keys/tray_off.png
+	rm -f $(DESTDIR)/$(PREFIX)/bin/$(EXECUTABLE)
+	cp $(EXECUTABLE) $(DESTDIR)/$(PREFIX)/bin
 	
 uninstall:
-	rm -rf $(ICONS_DIR)/lock-keys
-	rm -f $(PREFIX)/bin/$(EXECUTABLE)
+	rm -rf $(DESTDIR)/$(ICONS_DIR)/lock-keys
+	rm -f $(DESTDIR)/$(PREFIX)/bin/$(EXECUTABLE)
 
