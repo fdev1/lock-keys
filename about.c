@@ -35,7 +35,7 @@ void about_show()
 	}
 
 	const char* about_msg =
-			"Lock-keys Version 0.3\n" \
+			"Lock-keys Version 0.4\n" \
 			"Copyright (c) 2014\n\n"
 			"Author: Fernando Rodriguez\n"
 			"frodriguez.developer@outlook.com\n";

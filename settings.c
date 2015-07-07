@@ -96,7 +96,7 @@ void settings_dialog_show()
 	GtkAdjustment* timeout_adjustment;
 	GtkWidget* timeout;
 
-#if LK_USE_KDE || LK_USE_KDE4
+#if ENABLE_AUTOSTART
 	GtkWidget* check_autostart;
 #endif
 
@@ -124,7 +124,7 @@ void settings_dialog_show()
 	gtk_container_add(GTK_CONTAINER(content_area), grid);
 	gtk_widget_show(GTK_WIDGET(grid));
 
-#if LK_USE_KDE || LK_USE_KDE4
+#if ENABLE_AUTOSTART
 	check_autostart = gtk_check_button_new_with_label("Autostart at login.");
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(check_autostart), lk_settings.autostart);
 	gtk_grid_attach(GTK_GRID(grid), check_autostart, 0, row++, 2, 1);
@@ -183,7 +183,7 @@ void settings_dialog_show()
 
 	if (gtk_dialog_run(GTK_DIALOG(settings_window)) == GTK_RESPONSE_ACCEPT)
 	{
-#if LK_USE_KDE || LK_USE_KDE4
+#if ENABLE_AUTOSTART
 		lk_settings.autostart = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_autostart));
 #endif
 		lk_settings.overlay = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(check_overlay));
@@ -237,16 +237,23 @@ static char* split(char* str, char c, uint len)
  */
 void settings_save()
 {
-	char home_dir[255];
-	char config_file[255];
+	char home_dir[PATH_MAX+1];
+	char config_file[PATH_MAX+1];
 	struct stat st = {0};
 	struct passwd *pw = getpwuid(getuid());
+
+	if (strlen(pw->pw_dir) > (PATH_MAX - 28))
+	{
+		printf("error: home directory path too long!");
+		printf("error: could not save settings!");
+		return;
+	}
 
 	sprintf(home_dir, "%s/.lock-keys", pw->pw_dir);
 	sprintf(config_file, "%s/lock-keys-rc", home_dir);
 
 	if (stat(home_dir, &st) == -1)
-		mkdir(home_dir, 0700);
+		mkdir(home_dir, S_IRWXU | S_IRWXG);
 
 	FILE* f = fopen(config_file, "w");
 	if (f)
@@ -257,22 +264,20 @@ void settings_save()
 		fclose(f);
 	}
 
-#if LK_USE_KDE || LK_USE_KDE4
-
-#if LK_USE_KDE4
-	sprintf(config_file, "%s/.kde4/Autostart/lock-keys", pw->pw_dir);
-#else
-	sprintf(config_file, "%s/.kde4/Autostart/lock-keys", pw->pw_dir);
-#endif
-
+#if ENABLE_AUTOSTART
 	if (lk_settings.autostart)
 	{
+		sprintf(config_file, "%s/.config/autostart", pw->pw_dir);
+		if (stat(config_file, &st) == -1)
+			mkdir(config_file, S_IRWXU | S_IRWXG);
+		sprintf(config_file, "%s/.config/autostart/lock-keys", pw->pw_dir);
 		if (symlink(LK_EXEC_PATH, config_file))
 			lk_settings.autostart = lk_settings.autostart;
 	}
 	else
 	{
-		if (stat(config_file, &st) != -1)
+		sprintf(config_file, "%s/.config/autostart/lock-keys", pw->pw_dir);
+		if (stat(config_file, &st))
 			remove(config_file);
 	}
 #endif
@@ -285,20 +290,13 @@ void settings_save()
 void settings_load()
 {
 	#define MAX_LINE_LEN 30
-	#define MAX_PATH_LEN 255
 
 	char line[MAX_LINE_LEN];
-	char home_dir[MAX_PATH_LEN];
-	char config_file[MAX_PATH_LEN];
+	char home_dir[PATH_MAX+1];
+	char config_file[PATH_MAX+1];
 	struct passwd *pw = getpwuid(getuid());
 
-	/*
-	 * since the max path length can be really long or
-	 * unbounded we just allocate a reasonable buffer and
-	 * if the home dir path exceeds it we throw an error. The
-	 * 27 if for the path of kde bellow.
-	 */
-	if (strlen(pw->pw_dir) > (MAX_PATH_LEN - 27))
+	if (strlen(pw->pw_dir) > (PATH_MAX - 28))
 	{
 		printf("error: home directory path too long!");
 		printf("error: could not load settings!");
@@ -338,24 +336,15 @@ void settings_load()
 		fclose(f);
 	}
 
-#if LK_USE_KDE || LK_USE_KDE4
+#if ENABLE_AUTOSTART
 	{
 		struct stat st = {0};
-
-#if LK_USE_KDE4
-		sprintf(config_file, "%s/.kde4/Autostart/lock-keys", pw->pw_dir);
-#else
-		sprintf(config_file, "%s/.kde/Autostart/lock-keys", pw->pw_dir);
-#endif
-
+		sprintf(config_file, "%s/.config/autostart/lock-keys", pw->pw_dir);
 		if (stat(config_file, &st) != -1)
-		{
 			lk_settings.autostart = TRUE;
-		}
 	}
 #endif
 
 	#undef MAX_LINE_LEN
-	#undef MAX_PATH_LEN
-
 }
+

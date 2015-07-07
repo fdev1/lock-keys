@@ -1,6 +1,8 @@
 
-USE_KDE=0
-USE_KDE4=1
+# set this to 1 to enable an autostart option
+# on the settings dialog
+ENABLE_AUTOSTART=1
+
 DESTDIR=/
 PREFIX=/usr/local
 ICONS_DIR=$(PREFIX)/share/icons
@@ -21,8 +23,7 @@ $(EXECUTABLE):  $(OBJECTS)
 		-DLK_TRAY_ICON_ON=\"$(ICONS_DIR)/lock-keys/tray_on.png\" \
 		-DLK_TRAY_ICON_OFF=\"$(ICONS_DIR)/lock-keys/tray_off.png\" \
 		-DLK_BIN_PATH=\"$(PREFIX)/bin/$(EXECUTABLE)\" \
-		-DLK_USE_KDE=$(USE_KDE) \
-		-DLK_USE_KDE4=$(USE_KDE4) -c $< -o $@
+		-DENABLE_AUTOSTART=$(ENABLE_AUTOSTART) -c $< -o $@
 	
 clean:
 	rm -f $(OBJECTS) $(EXECUTABLE)
