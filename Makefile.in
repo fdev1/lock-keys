@@ -1,0 +1,42 @@
+
+# set this to 1 to enable an autostart option
+# on the settings dialog
+ENABLE_AUTOSTART=@autostart@
+
+DESTDIR=
+prefix=@prefix@
+ICONS_DIR=@datarootdir@/icons
+
+CC=@CC@
+CFLAGS=-O2 -Wall
+EXECUTABLE=lock-keys
+SOURCES=main.c overlay.c settings.c about.c
+OBJECTS=$(SOURCES:.c=.o)
+
+all: $(SOURCES) $(EXECUTABLE)
+
+$(EXECUTABLE):  $(OBJECTS)
+	$(CC) @GTK3_LIBS@ -o $@ $(OBJECTS)
+
+.c.o:
+	$(CC) $(CFLAGS)  @GTK3_CFLAGS@ \
+		-DLK_TRAY_ICON_ON=\"$(ICONS_DIR)/lock-keys/tray_on.png\" \
+		-DLK_TRAY_ICON_OFF=\"$(ICONS_DIR)/lock-keys/tray_off.png\" \
+		-DLK_BIN_PATH=\"$(prefix)/bin/$(EXECUTABLE)\" \
+		-DENABLE_AUTOSTART=$(ENABLE_AUTOSTART) -c $< -o $@
+	
+clean:
+	rm -f $(OBJECTS) $(EXECUTABLE)
+	
+install:
+	$(INSTALL) -d $(DESTDIR)/$(prefix)/bin
+	$(INSTALL) -d $(DESTDIR)/$(ICONS_DIR)/lock-keys
+	$(INSTALL) tray_on.png $(DESTDIR)/$(ICONS_DIR)/lock-keys/tray_on.png
+	$(INSTALL) tray_off.png $(DESTDIR)/$(ICONS_DIR)/lock-keys/tray_off.png
+	rm -f $(DESTDIR)/$(prefix)/bin/$(EXECUTABLE)
+	$(INSTALL) $(EXECUTABLE) $(DESTDIR)/$(prefix)/bin
+	
+uninstall:
+	rm -rf $(DESTDIR)/$(ICONS_DIR)/lock-keys
+	rm -f $(DESTDIR)/$(prefix)/bin/$(EXECUTABLE)
+

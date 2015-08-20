@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
 	/*
 	 * TODO: see if we can get this working without polling
 	 */
-	g_timeout_add(100, poll_keys, NULL);
+	g_timeout_add(500, poll_keys, NULL);
 
 	gtk_main();
 
