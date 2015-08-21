@@ -1,5 +1,6 @@
 AC_INIT([lock-keys])
 AC_PROG_CC
+AC_PROG_RM
 AC_PATH_PROG([INSTALL], [install])
 AC_HEADER_STDC
 AC_CHECK_HEADERS(unistd.h string.h pwd.h sys/stat.h sys/types.h)

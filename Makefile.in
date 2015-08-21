@@ -33,10 +33,10 @@ install:
 	$(INSTALL) -d $(DESTDIR)/$(ICONS_DIR)/lock-keys
 	$(INSTALL) tray_on.png $(DESTDIR)/$(ICONS_DIR)/lock-keys/tray_on.png
 	$(INSTALL) tray_off.png $(DESTDIR)/$(ICONS_DIR)/lock-keys/tray_off.png
-	rm -f $(DESTDIR)/$(prefix)/bin/$(EXECUTABLE)
+	$(RM) $(DESTDIR)/$(prefix)/bin/$(EXECUTABLE)
 	$(INSTALL) $(EXECUTABLE) $(DESTDIR)/$(prefix)/bin
 	
 uninstall:
-	rm -rf $(DESTDIR)/$(ICONS_DIR)/lock-keys
-	rm -f $(DESTDIR)/$(prefix)/bin/$(EXECUTABLE)
+	$(RM) -r $(DESTDIR)/$(ICONS_DIR)/lock-keys
+	$(RM) $(DESTDIR)/$(prefix)/bin/$(EXECUTABLE)
 
