@@ -6,6 +6,8 @@ A GTK+ based utility that displays a caps lock indicator on the system tray and 
 How to install
 --------------
 
+./configure
+
 make
 
 make install
